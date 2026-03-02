@@ -1,7 +1,7 @@
 name: Build IPA (Unsigned)
 
 on:
-  workflow_dispatch: # 手動で実行できるようにする
+  workflow_dispatch:
 
 jobs:
   build:
@@ -10,25 +10,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_15.2.app
-
+      # Xcodeのバージョン指定を削除し、システム標準を使用するように変更
       - name: Build Archive (No Signing)
         run: |
           xcodebuild archive \
-            -project 3DMeshFromDepth.xcodeproj \
-            -scheme 3DMeshFromDepth \
+            -project *.xcodeproj \
+            -scheme $(xcodebuild -list -project *.xcodeproj | grep "Schemes:" -A 2 | tail -1 | xargs) \
             -configuration Release \
-            -archivePath 3DMeshFromDepth.xcarchive \
+            -archivePath output.xcarchive \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_ENTITLEMENTS="" \
-            CODE_SIGNING_IDENTITY=""
+            CODE_SIGNING_IDENTITY="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES
 
       - name: Create IPA Structure
         run: |
           mkdir -p Payload
-          cp -r 3DMeshFromDepth.xcarchive/Products/Applications/*.app Payload/
+          cp -r output.xcarchive/Products/Applications/*.app Payload/
           zip -r 3DMeshFromDepth.ipa Payload
 
       - name: Upload Artifact
