@@ -1,0 +1,38 @@
+name: Build IPA (Unsigned)
+
+on:
+  workflow_dispatch: # 手動で実行できるようにする
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.2.app
+
+      - name: Build Archive (No Signing)
+        run: |
+          xcodebuild archive \
+            -project 3DMeshFromDepth.xcodeproj \
+            -scheme 3DMeshFromDepth \
+            -configuration Release \
+            -archivePath 3DMeshFromDepth.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_ENTITLEMENTS="" \
+            CODE_SIGNING_IDENTITY=""
+
+      - name: Create IPA Structure
+        run: |
+          mkdir -p Payload
+          cp -r 3DMeshFromDepth.xcarchive/Products/Applications/*.app Payload/
+          zip -r 3DMeshFromDepth.ipa Payload
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: 3DMeshFromDepth-IPA
+          path: 3DMeshFromDepth.ipa
